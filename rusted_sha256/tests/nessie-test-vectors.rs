@@ -89,3 +89,26 @@ fn test_nessie_set1_vec8() {
         "CDC76E5C9914FB9281A1C7E284D73E67F1809A48A497200E046D39CCC7112CD0"
     )
 }
+
+#[test]
+fn test_nessie_set4_vec0() {
+
+    assert_eq!(
+        to_hex(&Sha256::digest(&[0u8; 32])),
+        "66687AADF862BD776C8FC18B8E9F8E20089714856EE233B3902A591D0D5F2925"
+    );
+
+    let mut data = [0u8; 32];
+
+    for _ in 0..100_000 {
+        data = Sha256::digest(&data);
+    }
+
+    assert_eq!(
+        to_hex(&data),
+        "B422BC9C0646A432433C2410991C95E2D89758E3B4F540ACA863389F28A11379"
+    )
+
+}
+
+
