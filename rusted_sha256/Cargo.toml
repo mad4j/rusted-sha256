@@ -7,3 +7,5 @@ edition = "2018"
 
 [dependencies]
 
+[dev-dependencies]
+hex-literal = "0.3.3"

@@ -1,100 +1,121 @@
-use std::fmt::Write;
-
+use hex_literal::hex;
 use rusted_sha256::Sha256;
 
-fn to_hex(data: &[u8; 32]) -> String {
-    let mut s = String::new();
-
-    for &b in data {
-        write!(s, "{:02X}", b).unwrap();
-    }
-
-    s
+fn test_data(n: usize) -> [u8; 64] {
+    let mut v = [0u8; 64];
+    v[n / 8] = 0x80 >> (n % 8);
+    return v;
 }
 
 #[test]
 fn test_nessie_set1_vec0() {
     assert_eq!(
-        to_hex(&Sha256::digest(b"")),
-        "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+        Sha256::digest(b""), 
+        hex!("E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855")
     )
 }
 
 #[test]
 fn test_nessie_set1_vec1() {
     assert_eq!(
-        to_hex(&Sha256::digest(b"a")),
-        "CA978112CA1BBDCAFAC231B39A23DC4DA786EFF8147C4E72B9807785AFEE48BB"
+        Sha256::digest(b"a"), 
+        hex!("CA978112CA1BBDCAFAC231B39A23DC4DA786EFF8147C4E72B9807785AFEE48BB")
     )
 }
 
 #[test]
 fn test_nessie_set1_vec2() {
     assert_eq!(
-        to_hex(&Sha256::digest(b"abc")),
-        "BA7816BF8F01CFEA414140DE5DAE2223B00361A396177A9CB410FF61F20015AD"
+        Sha256::digest(b"abc"), 
+        hex!("BA7816BF8F01CFEA414140DE5DAE2223B00361A396177A9CB410FF61F20015AD")
     )
 }
 
 #[test]
 fn test_nessie_set1_vec3() {
     assert_eq!(
-        to_hex(&Sha256::digest(b"message digest")),
-        "F7846F55CF23E14EEBEAB5B4E1550CAD5B509E3348FBC4EFA3A1413D393CB650"
+        Sha256::digest(b"message digest"), 
+        hex!("F7846F55CF23E14EEBEAB5B4E1550CAD5B509E3348FBC4EFA3A1413D393CB650")
     )
 }
 
 #[test]
 fn test_nessie_set1_vec4() {
     assert_eq!(
-        to_hex(&Sha256::digest(b"abcdefghijklmnopqrstuvwxyz")),
-        "71C480DF93D6AE2F1EFAD1447C66C9525E316218CF51FC8D9ED832F2DAF18B73"
+        Sha256::digest(b"abcdefghijklmnopqrstuvwxyz"), 
+        hex!("71C480DF93D6AE2F1EFAD1447C66C9525E316218CF51FC8D9ED832F2DAF18B73")
     )
 }
 
 #[test]
 fn test_nessie_set1_vec5() {
     assert_eq!(
-        to_hex(&Sha256::digest(
-            b"abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"
-        )),
-        "248D6A61D20638B8E5C026930C3E6039A33CE45964FF2167F6ECEDD419DB06C1"
+        Sha256::digest(b"abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"), 
+        hex!("248D6A61D20638B8E5C026930C3E6039A33CE45964FF2167F6ECEDD419DB06C1")
     )
 }
 
 #[test]
 fn test_nessie_set1_vec6() {
     assert_eq!(
-        to_hex(&Sha256::digest(
-            b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-        )),
-        "DB4BFCBD4DA0CD85A60C3C37D3FBD8805C77F15FC6B1FDFE614EE0A7C8FDB4C0"
+        Sha256::digest(b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"), 
+        hex!("DB4BFCBD4DA0CD85A60C3C37D3FBD8805C77F15FC6B1FDFE614EE0A7C8FDB4C0")
     )
 }
 
 #[test]
 fn test_nessie_set1_vec7() {
     assert_eq!(
-        to_hex(&Sha256::digest(
-            b"12345678901234567890123456789012345678901234567890123456789012345678901234567890"
-        )),
-        "F371BC4A311F2B009EEF952DD83CA80E2B60026C8E935592D0F9C308453C813E"
+        Sha256::digest(b"12345678901234567890123456789012345678901234567890123456789012345678901234567890"), 
+        hex!("F371BC4A311F2B009EEF952DD83CA80E2B60026C8E935592D0F9C308453C813E")
     )
 }
 
 #[test]
 fn test_nessie_set1_vec8() {
     assert_eq!(
-        to_hex(&Sha256::digest(&[b'a'; 1_000_000])),
-        "CDC76E5C9914FB9281A1C7E284D73E67F1809A48A497200E046D39CCC7112CD0"
+        Sha256::digest(&[b'a'; 1_000_000]), 
+        hex!("CDC76E5C9914FB9281A1C7E284D73E67F1809A48A497200E046D39CCC7112CD0")
+    )
+}
+
+#[test]
+fn test_nessie_set3_vec0() {
+    assert_eq!(
+        Sha256::digest(&test_data(0)),
+        hex!("A9E8913B13864096B9EA592F9548C87654AAF8DF24E3437645FAC174D1036E1C")
+    )
+}
+
+#[test]
+fn test_nessie_set3_vec1() {
+    assert_eq!(
+        Sha256::digest(&test_data(1)),
+        hex!("F315F3F6D33215F8777A7D5A4B809F433729D13A86FE6ADF3DA5C11137E18273")
+    )
+}
+
+#[test]
+fn test_nessie_set3_vec2() {
+    assert_eq!(
+        Sha256::digest(&test_data(2)),
+        hex!("AE1F446791358EEB17DEBD264614CAEB7F72558C085C73BE0DDE284B4C63A957")
+    )
+}
+
+#[test]
+fn test_nessie_set3_vec3() {
+    assert_eq!(
+        Sha256::digest(&test_data(3)),
+        hex!("94C41AF484FFF7964969E0BDD922F82DFF0F4BE87A60D0664CC9D1FFD3ACD650")
     )
 }
 
 #[test]
 fn test_nessie_set4_vec0() {
     assert_eq!(
-        to_hex(&Sha256::digest(&[0u8; 32])),
-        "66687AADF862BD776C8FC18B8E9F8E20089714856EE233B3902A591D0D5F2925"
+        Sha256::digest(&[0u8; 32]),
+        hex!("66687AADF862BD776C8FC18B8E9F8E20089714856EE233B3902A591D0D5F2925")
     );
 
     let mut data = [0u8; 32];
@@ -104,7 +125,7 @@ fn test_nessie_set4_vec0() {
     }
 
     assert_eq!(
-        to_hex(&data),
-        "B422BC9C0646A432433C2410991C95E2D89758E3B4F540ACA863389F28A11379"
+        data,
+        hex!("B422BC9C0646A432433C2410991C95E2D89758E3B4F540ACA863389F28A11379")
     )
 }
