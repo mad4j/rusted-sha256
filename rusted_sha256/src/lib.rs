@@ -1,10 +1,17 @@
 #![no_std]
 
-const H: [u32; 8] = [
+const STATE_SIZE: usize = 8;
+const BLOCK_SIZE: usize = 64;
+
+// Initialize hash values:
+// (first 32 bits of the fractional parts of the square roots of the first 8 primes 2..19):
+const H: [u32; STATE_SIZE] = [
     0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19,
 ];
 
-const K: [u32; 64] = [
+// Initialize array of round constants:
+// (first 32 bits of the fractional parts of the cube roots of the first 64 primes 2..311):
+const K: [u32; BLOCK_SIZE] = [
     0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
     0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
     0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
@@ -16,9 +23,9 @@ const K: [u32; 64] = [
 ];
 
 pub struct Sha256 {
-    state: [u32; 8],
+    state: [u32; STATE_SIZE],
     completed_data_blocks: u64,
-    pending: [u8; 64],
+    pending: [u8; BLOCK_SIZE],
     num_pending: usize,
 }
 
@@ -33,27 +40,37 @@ impl Sha256 {
         Self {
             state: H,
             completed_data_blocks: 0,
-            pending: [0u8; 64],
+            pending: [0u8; BLOCK_SIZE],
             num_pending: 0,
         }
     }
 
-    pub fn with_state(state: [u32; 8]) -> Self {
+    pub fn with_state(state: [u32; STATE_SIZE]) -> Self {
         Self {
             state,
             completed_data_blocks: 0,
-            pending: [0u8; 64],
+            pending: [0u8; BLOCK_SIZE],
             num_pending: 0,
         }
     }
 
-    fn update_state(state: &mut [u32; 8], data: &[u8; 64]) {
-        let mut w = [0; 64];
-        for (w, d) in w.iter_mut().zip(data.iter().step_by(4)).take(16) {
-            *w = u32::from_be_bytes(unsafe { *(d as *const u8 as *const [u8; 4]) });
+    fn update_state(state: &mut [u32; 8], data: &[u8; BLOCK_SIZE]) {
+        // create a 64-entry message schedule array w[0..63] of 32-bit words
+        let mut w = [0; BLOCK_SIZE];
+
+        // copy chunk into first 16 words w[0..15] of the message schedule array
+        for i in 0..16 {
+            let k = i * 4;
+            w[i] = u32::from_be_bytes([data[k], data[k + 1], data[k + 2], data[k + 3]]);
         }
 
-        for i in 16..64 {
+        // Extend the first 16 words into the remaining 48 words w[16..63] of the message
+        // schedule array:
+        // for i from 16 to 63
+        //     s0 := (w[i-15] rightrotate  7) xor (w[i-15] rightrotate 18) xor (w[i-15] rightshift  3)
+        //     s1 := (w[i- 2] rightrotate 17) xor (w[i- 2] rightrotate 19) xor (w[i- 2] rightshift 10)
+        //     w[i] := w[i-16] + s0 + w[i-7] + s1
+        for i in 16..BLOCK_SIZE {
             let s0 = w[i - 15].rotate_right(7) ^ w[i - 15].rotate_right(18) ^ (w[i - 15] >> 3);
             let s1 = w[i - 2].rotate_right(17) ^ w[i - 2].rotate_right(19) ^ (w[i - 2] >> 10);
             w[i] = w[i - 16]
@@ -62,8 +79,17 @@ impl Sha256 {
                 .wrapping_add(s1);
         }
 
+        // Initialize working variables to current hash value:
+        //     a := h0
+        //     b := h1
+        //     c := h2
+        //     d := h3
+        //     e := h4
+        //     f := h5
+        //     g := h6
+        //     h := h7
         let mut h = *state;
-        for i in 0..64 {
+        for i in 0..BLOCK_SIZE {
             let ch = (h[4] & h[5]) ^ (!h[4] & h[6]);
             let ma = (h[0] & h[1]) ^ (h[0] & h[2]) ^ (h[1] & h[2]);
             let s0 = h[0].rotate_right(2) ^ h[0].rotate_right(13) ^ h[0].rotate_right(22);
@@ -85,8 +111,8 @@ impl Sha256 {
             h[0] = t0.wrapping_add(t1);
         }
 
-        for (i, v) in state.iter_mut().enumerate() {
-            *v = v.wrapping_add(h[i]);
+        for i in 0..STATE_SIZE {
+            state[i] = state[i].wrapping_add(h[i]);
         }
     }
 
@@ -103,13 +129,13 @@ impl Sha256 {
             self.num_pending = 0;
         }
 
-        let data_blocks = len / 64;
-        let remain = len % 64;
+        let data_blocks = len / BLOCK_SIZE;
+        let remain = len % BLOCK_SIZE;
         for _ in 0..data_blocks {
             Self::update_state(&mut self.state, unsafe {
-                &*(data.as_ptr().add(offset) as *const [u8; 64])
+                &*(data.as_ptr().add(offset) as *const [u8; BLOCK_SIZE])
             });
-            offset += 64;
+            offset += BLOCK_SIZE;
         }
         self.completed_data_blocks += data_blocks as u64;
 

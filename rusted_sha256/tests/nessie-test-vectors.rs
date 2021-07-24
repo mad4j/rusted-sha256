@@ -92,7 +92,6 @@ fn test_nessie_set1_vec8() {
 
 #[test]
 fn test_nessie_set4_vec0() {
-
     assert_eq!(
         to_hex(&Sha256::digest(&[0u8; 32])),
         "66687AADF862BD776C8FC18B8E9F8E20089714856EE233B3902A591D0D5F2925"
@@ -108,7 +107,4 @@ fn test_nessie_set4_vec0() {
         to_hex(&data),
         "B422BC9C0646A432433C2410991C95E2D89758E3B4F540ACA863389F28A11379"
     )
-
 }
-
-
