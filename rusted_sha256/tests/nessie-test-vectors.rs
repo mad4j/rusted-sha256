@@ -153,6 +153,14 @@ fn test_nessie_set2_vec56() {
 }
 
 #[test]
+fn test_nessie_set2_vec64() {
+    assert_eq!(
+        Sha256::digest(&[0; 8]), 
+        hex!("AF5570F5A1810B7AF78CAF4BC70A660F0DF51E42BAF91D4DE5B2328DE0E83DFC")
+    )
+}
+
+#[test]
 fn test_nessie_set3_vec0() {
     assert_eq!(
         Sha256::digest(&test_data(0)),
