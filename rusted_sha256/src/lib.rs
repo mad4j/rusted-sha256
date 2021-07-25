@@ -1,5 +1,7 @@
 #![no_std]
 
+use arrayref::array_ref;
+
 const STATE_SIZE: usize = 8;
 const BLOCK_SIZE: usize = 64;
 
@@ -42,8 +44,6 @@ const K: [u32; BLOCK_SIZE] = [
 pub struct Sha256 {
     state: [u32; STATE_SIZE],
     completed_data_blocks: u64,
-    pending: [u8; BLOCK_SIZE],
-    num_pending: usize,
 }
 
 impl Default for Sha256 {
@@ -57,8 +57,6 @@ impl Sha256 {
         Self {
             state: H,
             completed_data_blocks: 0,
-            pending: [0u8; BLOCK_SIZE],
-            num_pending: 0,
         }
     }
 
@@ -66,12 +64,11 @@ impl Sha256 {
         Self {
             state,
             completed_data_blocks: 0,
-            pending: [0u8; BLOCK_SIZE],
-            num_pending: 0,
         }
     }
 
-    fn update_state(state: &mut [u32; 8], data: &[u8; BLOCK_SIZE]) {
+    pub fn update(&mut self, data: &[u8; BLOCK_SIZE]) {
+
         // create a 64-entry message schedule array w[0..63] of 32-bit words
         let mut w = [0; BLOCK_SIZE];
 
@@ -105,7 +102,7 @@ impl Sha256 {
         // f := h5
         // g := h6
         // h := h7
-        let mut h = *state;
+        let mut h = self.state;
         //let (mut a, mut b, mut c, mut d, mut e, mut f, mut g, mut h) = (state[0], state[1], state[2], state[3], state[4], state[5], state[6], state[7]);
 
         // Compression function main loop:
@@ -156,63 +153,45 @@ impl Sha256 {
         // h6 := h6 + g
         // h7 := h7 + h
         for i in 0..STATE_SIZE {
-            state[i] = state[i].wrapping_add(h[i]);
+            self.state[i] = self.state[i].wrapping_add(h[i]);
         }
+
+        self.completed_data_blocks += 8*BLOCK_SIZE as u64;
     }
 
-    pub fn update(&mut self, data: &[u8]) {
-        let mut len = data.len();
+    pub fn finalize(&mut self, data: &[u8]) -> [u8; 32] {
+
         let mut offset = 0;
-
-        if self.num_pending > 0 && self.num_pending + len >= 64 {
-            self.pending[self.num_pending..].copy_from_slice(&data[..64 - self.num_pending]);
-            Self::update_state(&mut self.state, &self.pending);
-            self.completed_data_blocks += 1;
-            offset = 64 - self.num_pending;
-            len -= offset;
-            self.num_pending = 0;
-        }
-
-        let data_blocks = len / BLOCK_SIZE;
-        let remain = len % BLOCK_SIZE;
-        for _ in 0..data_blocks {
-            Self::update_state(&mut self.state, unsafe {
-                &*(data.as_ptr().add(offset) as *const [u8; BLOCK_SIZE])
-            });
+        for _ in 0 .. data.len() / BLOCK_SIZE {
+            self.update(array_ref!(data, offset, BLOCK_SIZE));
             offset += BLOCK_SIZE;
         }
-        self.completed_data_blocks += data_blocks as u64;
 
-        if remain > 0 {
-            self.pending[self.num_pending..self.num_pending + remain]
-                .copy_from_slice(&data[offset..]);
-            self.num_pending += remain;
-        }
-    }
+        let residual_length = data.len() - offset;
+        let message_length = self.completed_data_blocks + residual_length as u64 * 8;
 
-    pub fn finish(mut self) -> [u8; 32] {
-        let data_bits = self.completed_data_blocks * 512 + self.num_pending as u64 * 8;
-        let mut pending = [0u8; 72];
-        pending[0] = 128;
+        let mut last_block = [0u8; BLOCK_SIZE];
+        last_block[..residual_length].copy_from_slice(&data[offset..]);
+        last_block[residual_length] = 0x80;
 
-        let offset = if self.num_pending < 56 {
-            56 - self.num_pending
-        } else {
-            120 - self.num_pending
-        };
+        if residual_length >= 56 {
+            self.update(&last_block);
+            last_block = [0u8; BLOCK_SIZE];    
+        } 
 
-        pending[offset..offset + 8].copy_from_slice(&data_bits.to_be_bytes());
-        self.update(&pending[..offset + 8]);
+        last_block[BLOCK_SIZE-8..].copy_from_slice(&message_length.to_be_bytes());
+
+        self.update(&last_block);
 
         for h in self.state.iter_mut() {
             *h = h.to_be();
         }
+
+        //TBD verify
         unsafe { *(self.state.as_ptr() as *const [u8; 32]) }
     }
 
     pub fn digest(data: &[u8]) -> [u8; 32] {
-        let mut sha256 = Self::new();
-        sha256.update(data);
-        sha256.finish()
+        Self::new().finalize(&data)
     }
 }

@@ -1,12 +1,21 @@
 use hex_literal::hex;
 use rusted_sha256::Sha256;
 
+/// Test vectors from NESSIE project
+/// https://www.cosic.esat.kuleuven.be/nessie/testvectors/hash/sha/Sha-2-256.unverified.test-vectors
+
+
+/// Generate test data for Set 4 test cases
 fn test_data(n: usize) -> [u8; 64] {
     let mut v = [0u8; 64];
     v[n / 8] = 0x80 >> (n % 8);
     return v;
 }
 
+// Set 1, vector#  0:
+//                        message="" (empty string)
+//                           hash=E3B0C44298FC1C149AFBF4C8996FB924
+//                                27AE41E4649B934CA495991B7852B855
 #[test]
 fn test_nessie_set1_vec0() {
     assert_eq!(
