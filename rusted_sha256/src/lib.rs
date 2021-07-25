@@ -43,7 +43,7 @@ const K: [u32; BLOCK_SIZE] = [
 
 pub struct Sha256 {
     state: [u32; STATE_SIZE],
-    completed_data_blocks: u64,
+    computed_bytes: u64,
 }
 
 impl Default for Sha256 {
@@ -56,14 +56,14 @@ impl Sha256 {
     pub fn new() -> Self {
         Self {
             state: H,
-            completed_data_blocks: 0,
+            computed_bytes: 0,
         }
     }
 
     pub fn with_state(state: [u32; STATE_SIZE]) -> Self {
         Self {
             state,
-            completed_data_blocks: 0,
+            computed_bytes: 0,
         }
     }
 
@@ -156,7 +156,7 @@ impl Sha256 {
             self.state[i] = self.state[i].wrapping_add(h[i]);
         }
 
-        self.completed_data_blocks += 8*BLOCK_SIZE as u64;
+        self.computed_bytes += BLOCK_SIZE as u64;
     }
 
     pub fn finalize(&mut self, data: &[u8]) -> [u8; 32] {
@@ -168,13 +168,20 @@ impl Sha256 {
         }
 
         let residual_length = data.len() - offset;
-        let message_length = self.completed_data_blocks + residual_length as u64 * 8;
+        let message_length = 8 * (self.computed_bytes + residual_length as u64);
+
+        // Pre-processing (Padding):
+        // begin with the original message of length L bits
+        // append a single '1' bit
+        // append K '0' bits, where K is the minimum number >= 0 such that L + 1 + K + 64 is a multiple of 512
+        // append L as a 64-bit big-endian integer, making the total post-processed length a multiple of 512 bits
+        // such that the bits in the message are L 1 00..<K 0's>..00 <L as 64 bit integer> = k*512 total bits
 
         let mut last_block = [0u8; BLOCK_SIZE];
         last_block[..residual_length].copy_from_slice(&data[offset..]);
         last_block[residual_length] = 0x80;
 
-        if residual_length >= 56 {
+        if residual_length > (BLOCK_SIZE - 8 - 1) {
             self.update(&last_block);
             last_block = [0u8; BLOCK_SIZE];    
         } 
@@ -187,7 +194,8 @@ impl Sha256 {
             *h = h.to_be();
         }
 
-        //TBD verify
+        // Produce the final hash value (big-endian):
+        // digest := hash := h0 append h1 append h2 append h3 append h4 append h5 append h6 append h7
         unsafe { *(self.state.as_ptr() as *const [u8; 32]) }
     }
 

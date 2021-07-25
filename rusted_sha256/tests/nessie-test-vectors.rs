@@ -89,6 +89,46 @@ fn test_nessie_set1_vec8() {
 }
 
 #[test]
+fn test_nessie_set2_vec0() {
+    assert_eq!(
+        Sha256::digest(&[0; 0]), 
+        hex!("E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855")
+    )
+}
+
+#[test]
+fn test_nessie_set2_vec8() {
+    assert_eq!(
+        Sha256::digest(&[0; 1]), 
+        hex!("6E340B9CFFB37A989CA544E6BB780A2C78901D3FB33738768511A30617AFA01D")
+    )
+}
+
+#[test]
+fn test_nessie_set2_vec16() {
+    assert_eq!(
+        Sha256::digest(&[0; 2]), 
+        hex!("96A296D224F285C67BEE93C30F8A309157F0DAA35DC5B87E410B78630A09CFC7")
+    )
+}
+
+#[test]
+fn test_nessie_set2_vec24() {
+    assert_eq!(
+        Sha256::digest(&[0; 3]), 
+        hex!("709E80C88487A2411E1EE4DFB9F22A861492D20C4765150C0C794ABD70F8147C")
+    )
+}
+
+#[test]
+fn test_nessie_set2_vec32() {
+    assert_eq!(
+        Sha256::digest(&[0; 4]), 
+        hex!("DF3F619804A92FDB4057192DC43DD748EA778ADC52BC498CE80524C014B81119")
+    )
+}
+
+#[test]
 fn test_nessie_set3_vec0() {
     assert_eq!(
         Sha256::digest(&test_data(0)),
