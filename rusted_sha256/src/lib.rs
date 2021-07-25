@@ -167,8 +167,8 @@ impl Sha256 {
             offset += BLOCK_SIZE;
         }
 
-        let residual_length = data.len() - offset;
-        let message_length = 8 * (self.computed_bytes + residual_length as u64);
+        let residual_bytes = data.len() - offset;
+        let message_length = 8 * (self.computed_bytes + residual_bytes as u64);
 
         // Pre-processing (Padding):
         // begin with the original message of length L bits
@@ -178,10 +178,10 @@ impl Sha256 {
         // such that the bits in the message are L 1 00..<K 0's>..00 <L as 64 bit integer> = k*512 total bits
 
         let mut last_block = [0u8; BLOCK_SIZE];
-        last_block[..residual_length].copy_from_slice(&data[offset..]);
-        last_block[residual_length] = 0x80;
+        last_block[..residual_bytes].copy_from_slice(&data[offset..]);
+        last_block[residual_bytes] = 0x80;
 
-        if residual_length > (BLOCK_SIZE - 8 - 1) {
+        if residual_bytes > (BLOCK_SIZE - 8 - 1) {
             self.update(&last_block);
             last_block = [0u8; BLOCK_SIZE];    
         } 

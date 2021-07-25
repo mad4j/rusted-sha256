@@ -129,6 +129,30 @@ fn test_nessie_set2_vec32() {
 }
 
 #[test]
+fn test_nessie_set2_vec40() {
+    assert_eq!(
+        Sha256::digest(&[0; 5]), 
+        hex!("8855508AADE16EC573D21E6A485DFD0A7624085C1A14B5ECDD6485DE0C6839A4")
+    )
+}
+
+#[test]
+fn test_nessie_set2_vec48() {
+    assert_eq!(
+        Sha256::digest(&[0; 6]), 
+        hex!("B0F66ADC83641586656866813FD9DD0B8EBB63796075661BA45D1AA8089E1D44")
+    )
+}
+
+#[test]
+fn test_nessie_set2_vec56() {
+    assert_eq!(
+        Sha256::digest(&[0; 7]), 
+        hex!("837885C8F8091AEAEB9EC3C3F85A6FF470A415E610B8BA3E49F9B33C9CF9D619")
+    )
+}
+
+#[test]
 fn test_nessie_set3_vec0() {
     assert_eq!(
         Sha256::digest(&test_data(0)),
